@@ -49,12 +49,6 @@ python main.py
 
 The offline tests don’t need network access. A fresh scrape does. I’ve limited this project to the Books to Scrape practice sandbox, and I’ll check a target’s rules and terms before reusing this scraper elsewhere.
 
-## Test screenshot
-
-I’ll add my terminal screenshot showing the passing parser checks and scraper summary here.
-
-<!-- Add the screenshot here as assets/a9-scraper-test.png when it is available in this project folder. -->
-
 ## What I learned
 
 This project gave me practice turning HTML into validated records and keeping a scraper polite and recoverable. Caching made repeated checks much faster, and the broken-URL run helped me see what happens when one product page can’t be fetched.
