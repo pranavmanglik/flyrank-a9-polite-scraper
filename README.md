@@ -1,42 +1,61 @@
-# W5 A9 — The polite scraper
+# My polite book scraper
 
-This project collects book records from the first three catalogue pages of [Books to Scrape](https://books.toscrape.com/), a fictional bookstore in the [ToScrape practice sandbox](https://toscrape.com/). The sandbox describes the bookstore as a place that wants to be scraped and intended for beginner practice. The target's `robots.txt` returned HTTP 404 when checked on 2026-11-13; that means no robots file was found, not that a missing file grants permission. Keep this project limited to the named sandbox and re-check site rules and terms before using any scraper elsewhere.
+For this assignment, I built a small scraper for the first three catalogue pages on [Books to Scrape](https://books.toscrape.com/), a practice site from the [ToScrape sandbox](https://toscrape.com/). I wanted to collect a small, useful set of book details while keeping requests slow and predictable.
 
-The scraper sends an identifying user-agent, uses a 10-second timeout, waits at least 500 ms between real requests, checks HTTP status, caches downloaded HTML, discovers the next catalogue pages from their links, validates records with Pydantic, and writes a run report. The optional broken-URL switch exercises the per-page failure path against the sandbox itself.
+## What I built
 
-## Run
+- A scraper that follows catalogue links to find the next pages
+- A clear user-agent, request timeout, and delay between real requests
+- A local HTML cache so reruns don’t need to download the same pages again
+- Pydantic validation for the book records
+- Duplicate removal based on each book’s product URL
+- JSON output for valid books, invalid records, and a run summary
+- A switch for checking how the scraper handles a missing product page
 
-Use Python 3.10 or newer from this folder:
+Each valid book record has its title, product URL, price, availability, rating, description, source page, fetch time, and numeric GBP price. The description is optional because some product pages don’t have one.
+
+## How I run it
+
+From this project folder, I create a virtual environment, install the requirements, and run the offline checks:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+python -m unittest discover -s tests -v
+```
+
+Then I run the scraper:
+
+```bash
 python main.py
 ```
 
-Run the five offline parser checks with `python -m unittest discover -s tests -v`.
+The results are written to `output/books.json`, `output/errors.json`, and `output/run-report.json`. The downloaded HTML is kept in `cache/`, which is ignored by Git. I can use `python main.py --refresh-cache` when I intentionally want to fetch the pages again. The optional failure-path check is `python main.py --inject-broken-url`.
 
-The first run may take around half a minute because it spaces out requests. It creates `cache/` and `output/books.json`, `output/errors.json`, and `output/run-report.json`. Re-running uses local HTML cache. Use `python main.py --refresh-cache` only when you intentionally want to download the pages again. Use `python main.py --inject-broken-url` to prove one missing detail page is skipped while the remaining records are saved.
+## What I tested
 
-## Record shape
+On 14 November 2026, all five offline parser checks passed. They covered duplicate URLs, malformed product markup, a missing description, price normalization, and relative product URLs.
 
-Each validated record contains the eight raw fields (`title`, `product_url`, `price_text`, `availability_text`, `rating_text`, `description`, `source_page`, `fetched_at`) plus numeric `price_gbp`. The product URL is the identity, so duplicate books are written once. Records with invalid fields are sent to `output/errors.json` instead of `books.json`.
+My regular run used the existing HTML cache. It processed 3 catalogue pages and 60 unique book URLs, wrote 60 valid records, and reported 0 invalid records and 0 failed pages. The report showed 63 cache hits and 0 pages fetched during that run.
 
-## Verification recorded on 2026-11-13
+I also ran `python main.py --inject-broken-url`. The deliberately invalid product URL returned a 404 and was skipped; the run still kept all 60 valid records and reported 1 failed page. These results are recorded in `output/run-report.json`.
 
-`python -m unittest discover -s tests -v` passes five offline parser checks: price normalization, relative URL resolution, missing description, duplicate URL removal, and a malformed product fixture.
+The normal run command is:
 
-The live run against the practice sandbox produced 3 catalogue pages, 60 discovered and unique URLs, 60 valid records, 0 invalid records, and 0 failed pages. The cached rerun again produced 60 valid records with 63 cache hits. `--inject-broken-url` preserved all 60 valid records and reported 1 failed page. The run output is in `output/run-report.json`; `output/books.json` contains the collected records.
+```bash
+python main.py
+```
 
-## Evidence to add before submission
+The offline tests don’t need network access. A fresh scrape does. I’ve limited this project to the Books to Scrape practice sandbox, and I’ll check a target’s rules and terms before reusing this scraper elsewhere.
 
-Add a genuine `curl -i` output (not applicable to this CLI project), one real record and one limitation you observed. Cache files are ignored by Git; publish a sample output, not the downloaded HTML cache. The sample output should be reviewed for size and data handling before publication.
+## Test screenshot
 
-This assignment needs no browser: the book data is already in the HTML returned by the server. A browser would add time and memory without helping this pipeline.
+I’ll add my terminal screenshot showing the passing parser checks and scraper summary here.
 
-Ethics note: use an official API when one exists; do not bypass logins, paywalls, or blocks; collect only the data needed; and check the target's current rules and terms before reusing code.
+<!-- Add the screenshot here as assets/a9-scraper-test.png when it is available in this project folder. -->
 
-## Assignment steps
+## What I learned
 
-Suggested commits: classify the target; fetch and cache HTML; discover pages; extract fields; normalize and validate; handle failures and report; document and publish. The bonus AI version should stay isolated and requires your own prompt, run comparison, and concrete findings. Add genuine results and make the public GitHub repo required by the assignment.
+This project gave me practice turning HTML into validated records and keeping a scraper polite and recoverable. Caching made repeated checks much faster, and the broken-URL run helped me see what happens when one product page can’t be fetched.
+
